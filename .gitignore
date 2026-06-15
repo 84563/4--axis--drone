@@ -1,0 +1,23 @@
+# 忽略 Keil 编译产生的中间文件和依赖文件
+*.o
+*.d
+*.crf
+*.lnp
+*.axf
+*.htm
+*.build_log.htm
+*.dep
+*.iex
+*.i
+*.lst
+*.map
+
+# 忽略 Keil 自动生成的备份和配置
+*.bak
+*.saved_bak
+*.uvguix.*
+*.uv2.bak
+
+# 忽略 STM32CubeMX 的本地报告
+/MDK-ARM/RTE/
+/MDK-ARM/.pack/
