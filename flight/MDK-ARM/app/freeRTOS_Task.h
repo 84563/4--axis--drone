@@ -4,6 +4,11 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "com_debug.h"
+#include "Com_config.h"
+#include "TP4336.h"
+#include "motor.h"
+#include "led.h"
+#include "SI24R1.h"
 
 
 void freeRTOS_start(void);
