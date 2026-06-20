@@ -23,6 +23,8 @@ Remote_State remote_state = REMOTE_DISCONNECTED;
 //当前的飞行状态
 Flight_State flight_state = NORMAL;
 
+//扩展获取接收的遥控数据
+Remote_Data remote_data = {0};
 
 
 //电源管理任务
@@ -37,21 +39,21 @@ TaskHandle_t power_task_handle;
 //飞行任务
 void flight_task(void *pvParameters);
 #define FLIGHT_TASK_STACK_SIZE 128
-#define FLIGHT_TASK_PRIORITY 4
+#define FLIGHT_TASK_PRIORITY 3
 TaskHandle_t flight_control_task_handle;
 #define FLIGHT_TASK_PERIOD 6
 
 //LED任务
 void led_task(void *pvParameters);
 #define LED_TASK_STACK_SIZE 128
-#define LED_TASK_PRIORITY 4
+#define LED_TASK_PRIORITY 1
 TaskHandle_t led_task_handle;
 #define LED_TASK_PERIOD 100
 
 //通信任务
 void com_task(void *pvParameters);
 #define COM_TASK_STACK_SIZE 128
-#define COM_TASK_PRIORITY 4
+#define COM_TASK_PRIORITY 2
 TaskHandle_t com_task_handle;
 #define COM_TASK_PERIOD 6
 
@@ -82,8 +84,20 @@ void power_task(void *pvParameters)
 
     while(1)
     {
-        vTaskDelayUntil(&xLastWakeTime, POWER_TASK_PERIOD);
-        TP4336_start();
+       // vTaskDelayUntil(&xLastWakeTime, POWER_TASK_PERIOD);
+       //TP4336_start();
+			
+       uint32_t res = ulTaskNotifyTake(pdTRUE, POWER_TASK_PERIOD);
+       if(res != 0)
+        {
+            //关机通知
+            TP4336_shutdown();
+        }
+        else
+        {
+            //接收通知
+            TP4336_start();
+        }
     }
 }
 
@@ -166,7 +180,6 @@ void led_task(void *pvParameters)
     }
 }
 
-uint8_t com_data[TX_PLOAD_WIDTH] = {0};
 void com_task(void *pvParameters)
 {
     //获取当前的基准时间
@@ -176,11 +189,21 @@ void com_task(void *pvParameters)
     while (1)
     {
         //接收数据到缓存区
-        uint8_t res = SI24R1_RxPacket(com_data);
-        if(res == 0)
+        uint8_t res = receive_data();
+        
+        //处理连接状态
+        process_connect_state(res);
+
+        if (remote_data.shutdown == 1)
         {
-            printf("%s\n",com_data);
+            //使用任务通知直接关机
+            xTaskNotifyGive(power_task_handle);
         }
+        
+        //处理飞行状态
+        process_flight_state();
+
+        //6ms执行一次 接收数据的时间等于发送时间间隔
         vTaskDelayUntil(&xLastWakeTime, COM_TASK_PERIOD);
     }
 }

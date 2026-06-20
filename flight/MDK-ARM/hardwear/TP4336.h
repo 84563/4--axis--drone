@@ -9,6 +9,7 @@
 
 //启动TP4336电源 避免自动关闭
 void TP4336_start(void);
-
+//关机
+void TP4336_shutdown(void);
 
 #endif
